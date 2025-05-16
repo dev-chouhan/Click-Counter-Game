@@ -11,6 +11,9 @@ function App() {
 
   // For GameControls
   const [countdown, setCountdown] = useState(timeLimit);
+  const [startTime, setStartTime] = useState(null); // For milliseconds
+  const [endTime, setEndTime] = useState(null); // For milliseconds
+  const [pauseStartTime, setPauseStartTime] = useState(null); // To prevent time to run out even after pausing (to freez useEffect)
   const [clicks, setClicks] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isPaused, setIsPause] = useState(false);
@@ -28,23 +31,31 @@ function App() {
   useEffect(()=>{
     if(!isRunning){
       setCountdown(timeLimit);
+      setStartTime(null);
+      setEndTime(null);
     }
   }, [timeLimit]);
 
   // useEffect for Timer interval logic
   useEffect(() => {
-    let timer = null;
-    if (isRunning && !isPaused && countdown > 0) {
-      timer = setInterval(() => {
-        setCountdown((prev) => prev - 1);
-      }, 1000);
+    let interval = null;
+    if (isRunning && !isPaused) {
+      interval = setInterval(() => {
+        const milliSecFrom1Jan1970 = Date.now();
+        const timeLeft = (endTime - milliSecFrom1Jan1970) / 1000;
+        if (timeLeft <= 0) {
+          setCountdown(0);
+          setIsRunning(false);
+          clearInterval(interval);
+          saveGameResult();
+        } else {
+          setCountdown(timeLeft);
+        }
+      }, 50);
     }
-    if (isRunning && countdown === 0) {
-      setIsRunning(false);
-      saveGameResult();
-    }
-    return () => clearInterval(timer);
-  }, [isRunning, isPaused, countdown]);  
+    return () => clearInterval(interval);
+  }, [isRunning, isPaused, endTime]);
+
 
   const handleStart = () => {
     // if(!playerName.trim()){   ************************************************
@@ -56,15 +67,24 @@ function App() {
     setCountdown(timeLimit);
     setIsRunning(true);
     setIsPause(false);
+    const milliSecFrom1Jan1970 = currentDT().getTime();
+    setStartTime(milliSecFrom1Jan1970);
+    setEndTime(milliSecFrom1Jan1970 + timeLimit * 1000);
   }
 
   const handlePause = () => {
     setIsPause(true);
+    setPauseStartTime(Date.now());
     setPauseCount((prev)=>prev+1);
   }
 
   const handleResume = () => {
     setIsPause(false);
+    if(pauseStartTime){
+      const pauseDuration = Date.now() - pauseStartTime; // in milliseconds
+      setEndTime(prev => prev + pauseDuration);
+    }
+    setPauseStartTime(null);
   }
 
   const handleClick = () => {

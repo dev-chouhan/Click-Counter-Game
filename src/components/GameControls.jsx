@@ -2,7 +2,7 @@ function GameControls({countdown, clicks, handleClick, handleStart, handlePause,
     return(
         <>
             <div style={{ textAlign: "center", marginTop: "20px" }}>
-                <h2>Time Left: {countdown}</h2>
+                <h2>Time Left: {countdown.toFixed(3)}s</h2>
                 <h2>Total Clicks: {clicks}</h2>
 
                 {/* Before starting Game check if (game is paused or haven't started)?"start game":""*/}
